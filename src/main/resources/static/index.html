@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Resume Analyzer</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+    <style>
+
+        /* =====================================================
+           LOGIN ACCESS CONTROL
+        ===================================================== */
+
+        body.logged-out .hero-section,
+        body.logged-out #dashboard,
+        body.logged-out #jobs,
+        body.logged-out #improvements,
+        body.logged-out #resumeHistorySection {
+            display: none !important;
+        }
+
+        body.logged-out #authSection {
+            display: flex !important;
+        }
+
+        body.logged-in #authSection {
+            display: none !important;
+        }
+
+        body.logged-in #dashboard,
+        body.logged-in #jobs,
+        body.logged-in #improvements,
+        body.logged-in #resumeHistorySection {
+            display: block !important;
+        }
+
+        body.logged-in .professional-dashboard-header {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) minmax(420px, 480px) !important;
+            grid-template-rows: auto !important;
+            align-items: center !important;
+            gap: 55px !important;
+        }
+
+        body.logged-in .nav {
+            display: flex !important;
+        }
+
+        /* =====================================================
+           LOGIN PAGE
+        ===================================================== */
+
+        body.logged-out #authSection {
+            min-height: calc(100vh - 90px);
+            box-sizing: border-box;
+
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            padding: 30px 20px 40px;
+            margin: 0;
+        }
+
+        body.logged-out #authSection .section-heading {
+            margin: 0 0 22px;
+            text-align: center;
+        }
+
+        body.logged-out #authSection .section-heading span {
+            display: none;
+        }
+
+        body.logged-out #authSection .section-heading h2 {
+            margin: 0 0 10px;
+            font-size: 30px;
+        }
+
+        body.logged-out #authSection .section-heading p {
+            margin: 0;
+            font-size: 17px;
+        }
+
+        /* =====================================================
+           LOGIN CARD
+        ===================================================== */
+
+        body.logged-out .auth-card {
+            width: 100%;
+            max-width: 520px;
+            box-sizing: border-box;
+
+            margin: 0 auto;
+            padding: 38px 36px;
+
+            background: #ffffff;
+            border: 1px solid #dbeafe;
+            border-radius: 22px;
+
+            box-shadow: 0 15px 40px rgba(37, 99, 235, 0.08);
+        }
+
+        body.logged-out .auth-form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        body.logged-out .auth-form h3 {
+            margin: 0 0 28px;
+            text-align: center;
+            font-size: 30px;
+        }
+
+        body.logged-out .auth-form label {
+            margin: 0 0 9px;
+            color: #172554;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        body.logged-out .auth-form input {
+            width: 100%;
+            box-sizing: border-box;
+
+            margin: 0 0 25px;
+            padding: 17px 16px;
+
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+
+            background: #ffffff;
+            color: #0f172a;
+            font-size: 16px;
+            outline: none;
+        }
+
+        body.logged-out .auth-form input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        body.logged-out .auth-form > button {
+            width: 100%;
+            margin-top: 2px;
+            padding: 16px;
+
+            border: none;
+            border-radius: 10px;
+
+            background: #2563eb;
+            color: #ffffff;
+
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        body.logged-out .auth-form > button:hover {
+            background: #1d4ed8;
+        }
+
+        body.logged-out .auth-form > button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        body.logged-out #loginMessage,
+        body.logged-out #registerMessage {
+            min-height: 20px;
+            margin: 15px 0 0;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        body.logged-out .auth-switch {
+            margin: 28px 0 0;
+            text-align: center;
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        body.logged-out .auth-link-button {
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+
+            border: none !important;
+            background: transparent !important;
+
+            color: #2563eb !important;
+            font-size: 16px !important;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        body.logged-out .auth-link-button:hover {
+            text-decoration: underline;
+        }
+
+        /* =====================================================
+           MODALS
+        ===================================================== */
+
+        #analysisModal,
+        #resumeModal {
+            display: none;
+        }
+
+        #analysisModal.is-open,
+        #resumeModal.is-open {
+            display: flex;
+        }
+
+        /* =====================================================
+           HIDDEN SECTIONS
+        ===================================================== */
+
+        body.logged-out main {
+            min-height: 0;
+        }
+
+        body.logged-out .footer {
+            margin-top: 0;
+        }
+
+        /* =====================================================
+           ANCHOR NAVIGATION
+        ===================================================== */
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 90px;
+        }
+
+        /* =====================================================
+           MOBILE LOGIN
+        ===================================================== */
+
+        @media (max-width: 600px) {
+
+            body.logged-out #authSection {
+                min-height: calc(100vh - 70px);
+                padding: 25px 15px 35px;
+            }
+
+            body.logged-out #authSection .section-heading h2 {
+                font-size: 25px;
+            }
+
+            body.logged-out #authSection .section-heading p {
+                font-size: 15px;
+            }
+
+            body.logged-out .auth-card {
+                padding: 30px 22px;
+                border-radius: 18px;
+            }
+
+            body.logged-out .auth-form h3 {
+                font-size: 26px;
+            }
+
+            body.logged-out .auth-form input {
+                padding: 15px;
+            }
+
+            body.logged-out .auth-form > button {
+                padding: 15px;
+            }
+
+        }
+
+        /* =====================================================
+   PROFESSIONAL NAVY LOGIN THEME
+===================================================== */
+
+        body.logged-out {
+            background:
+                    radial-gradient(circle at 10% 10%, #334155 0%, transparent 35%),
+                    linear-gradient(135deg, #0f172a, #1e293b 55%, #334155);
+        }
+
+        /* Login heading */
+        body.logged-out #authSection .section-heading h2 {
+            color: #ffffff;
+            font-size: 32px;
+            font-weight: 800;
+        }
+
+        body.logged-out #authSection .section-heading p {
+            color: #cbd5e1;
+        }
+
+        /* White login card */
+        body.logged-out .auth-card {
+            width: 430px !important;
+            max-width: calc(100vw - 32px) !important;
+
+            padding: 40px 38px 32px !important;
+
+            background: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.8) !important;
+            border-radius: 22px !important;
+
+            box-shadow:
+                    0 30px 70px rgba(0, 0, 0, 0.28),
+                    0 10px 30px rgba(15, 23, 42, 0.14) !important;
+        }
+
+        /* Login title */
+        body.logged-out .auth-form h3 {
+            color: #0f172a;
+        }
+
+        /* Labels */
+        body.logged-out .auth-form label {
+            color: #334155;
+        }
+
+        /* Input fields */
+        body.logged-out .auth-form input {
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+        }
+
+        body.logged-out .auth-form input:focus {
+            background: #ffffff;
+            border-color: #b08d3c;
+            box-shadow: 0 0 0 3px rgba(176, 141, 60, 0.15);
+        }
+
+        /* Professional gold login button */
+        body.logged-out .auth-form > button:not(.auth-link-button) {
+            background: linear-gradient(135deg, #b08d3c, #8f6f28);
+            color: #ffffff;
+            border-radius: 10px;
+
+            box-shadow: 0 6px 16px rgba(176, 141, 60, 0.25);
+        }
+
+        body.logged-out .auth-form > button:not(.auth-link-button):hover {
+            background: linear-gradient(135deg, #c19a4b, #a17d32);
+            transform: translateY(-2px);
+        }
+
+        /* Login/Register link */
+        body.logged-out .auth-link-button {
+            color: #1d4ed8 !important;
+        }
+
+        /* Divider */
+        body.logged-out .auth-switch {
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+        }
+
+    </style>
+
+</head>
+
+<body class="logged-out">
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<header class="header">
+
+    <div class="header-container">
+
+        <a href="#" class="logo">
+            Resume Analyzer
+        </a>
+
+        <nav class="nav">
+
+            <a href="#dashboard">
+                Dashboard
+            </a>
+
+            <a href="#jobs">
+                Recommended Jobs
+            </a>
+
+            <a href="#improvements">
+                Improvements
+            </a>
+
+            <a href="#resumeHistorySection">
+                My Resumes
+            </a>
+
+            <span id="headerWelcome"
+                  class="header-welcome">
+
+                Welcome,
+                <strong id="headerUsername">
+                    User
+                </strong>
+
+            </span>
+
+            <button type="button"
+                    class="logout-button"
+                    onclick="logoutUser()">
+
+                Logout
+
+            </button>
+
+        </nav>
+
+    </div>
+
+</header>
+
+<!-- =========================================================
+     MAIN CONTENT
+========================================================= -->
+
+<main class="container">
+
+    <!-- =====================================================
+         LOGIN SECTION
+    ===================================================== -->
+
+    <section id="authSection"
+             class="auth-section">
+
+        <div class="section-heading">
+
+            <span>ACCOUNT</span>
+
+            <h2>
+                Login to Resume Analyzer
+            </h2>
+
+            <p>
+                Login to upload your resume and view
+                personalized analysis.
+            </p>
+
+        </div>
+
+        <div class="auth-card">
+
+            <!-- LOGIN FORM -->
+
+            <div id="loginForm"
+                 class="auth-form">
+
+                <h3>
+                    Login
+                </h3>
+
+                <label for="username">
+                    Username
+                </label>
+
+                <input type="text"
+                       id="username"
+                       placeholder="Enter username"
+                       autocomplete="username">
+
+                <label for="password">
+                    Password
+                </label>
+
+                <input type="password"
+                       id="password"
+                       placeholder="Enter password"
+                       autocomplete="current-password">
+
+                <button type="button"
+                        id="loginButton"
+                        onclick="loginUser()">
+
+                    Login
+
+                </button>
+
+                <p id="loginMessage"></p>
+
+                <p class="auth-switch">
+
+                    New user?
+
+                    <button type="button"
+                            class="auth-link-button"
+                            onclick="showRegisterForm()">
+
+                        Create an account
+
+                    </button>
+
+                </p>
+
+            </div>
+
+            <!-- REGISTER FORM -->
+
+            <div id="registerForm"
+                 class="auth-form"
+                 style="display: none;">
+
+                <h3>
+                    Create Account
+                </h3>
+
+                <label for="registerUsername">
+                    Username
+                </label>
+
+                <input type="text"
+                       id="registerUsername"
+                       placeholder="Choose a username"
+                       autocomplete="username">
+
+                <label for="registerEmail">
+                    Email
+                </label>
+
+                <input type="email"
+                       id="registerEmail"
+                       placeholder="Enter your email"
+                       autocomplete="email">
+
+                <label for="registerPassword">
+                    Password
+                </label>
+
+                <input type="password"
+                       id="registerPassword"
+                       placeholder="Choose a password"
+                       autocomplete="new-password">
+
+                <label for="confirmPassword">
+                    Confirm Password
+                </label>
+
+                <input type="password"
+                       id="confirmPassword"
+                       placeholder="Confirm your password"
+                       autocomplete="new-password">
+
+                <button type="button"
+                        id="registerButton"
+                        onclick="registerUser()">
+
+                    Register
+
+                </button>
+
+                <p id="registerMessage"></p>
+
+                <p class="auth-switch">
+
+                    Already have an account?
+
+                    <button type="button"
+                            class="auth-link-button"
+                            onclick="showLoginForm()">
+
+                        Login
+
+                    </button>
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+     PROFESSIONAL DASHBOARD HEADER
+===================================================== -->
+
+    <section class="hero-section professional-dashboard-header">
+
+        <div class="hero-content">
+
+        <span class="hero-label">
+            RESUME ANALYZER
+        </span>
+
+            <h1>
+                Welcome back,
+                <span id="welcomeUsername">User</span>
+            </h1>
+
+            <p>
+                Analyze your resume and discover better opportunities.
+            </p>
+
+        </div>
+
+        <div class="upload-card">
+
+            <div class="upload-card-heading">
+                <div class="upload-icon">📄</div>
+
+                <div>
+                    <h2>Upload Resume</h2>
+                    <p>Analyze your resume with AI</p>
+                </div>
+            </div>
+
+            <label for="resumeFile"
+                   class="file-label">
+
+                Choose PDF Resume
+
+            </label>
+
+            <input type="file"
+                   id="resumeFile"
+                   name="file"
+                   accept="application/pdf,.pdf"
+                   hidden>
+
+            <p id="selectedFileName">
+                No file selected
+            </p>
+
+            <button type="button"
+                    id="uploadButton"
+                    onclick="uploadResume()">
+
+                Upload &amp; Analyze
+
+            </button>
+
+            <p id="uploadMessage"
+               style="margin-top: 15px; text-align: center;">
+
+            </p>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         DASHBOARD SECTION
+    ===================================================== -->
+
+    <section id="dashboard"
+             class="dashboard-section">
+
+        <div class="section-heading">
+
+            <span>ANALYSIS</span>
+
+            <h2>
+                Resume Dashboard
+            </h2>
+
+            <p>
+                See your resume performance across available jobs.
+            </p>
+
+        </div>
+
+        <!-- IMPORTANT:
+             All four dashboard cards are inside dashboard-grid.
+             This fixes the changed format.
+        -->
+
+        <div class="dashboard-grid">
+
+            <!-- CARD 1 -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">
+                    Jobs Found
+                </div>
+
+                <div id="totalJobs" class="dashboard-value">
+                    0
+                </div>
+            </div>
+
+            <!-- CARD 2 -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">
+                    Best Match
+                </div>
+
+                <div id="bestScore" class="dashboard-value">
+                    0%
+                </div>
+            </div>
+
+            <!-- CARD 3 -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">
+                    Skill Match
+                </div>
+
+                <div id="averageScore" class="dashboard-value">
+                    0%
+                </div>
+            </div>
+
+            <!-- CARD 4 -->
+            <div class="dashboard-card">
+                <div class="dashboard-card-title">
+                    Resumes
+                </div>
+
+                <div id="totalResumes" class="dashboard-value">
+                    0
+                </div>
+            </div>
+
+        </div>
+
+        <!-- COMMON MISSING SKILLS -->
+
+        <div class="dashboard-card">
+
+            <h3>
+                Common Missing Skills
+            </h3>
+
+            <div id="commonMissingSkills">
+
+                <p>
+                    Upload a resume to see missing skills.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         RECOMMENDED JOBS
+    ===================================================== -->
+
+    <section id="jobs"
+             class="jobs-section">
+
+        <div class="section-heading">
+
+            <span>CAREER OPPORTUNITIES</span>
+
+            <h2>
+                Recommended Jobs
+            </h2>
+
+            <p>
+                Jobs ranked according to your resume skill match.
+            </p>
+
+        </div>
+
+        <div id="jobsContainer"
+             class="jobs-container">
+
+            <div class="empty-state">
+
+                <h3>
+                    No job recommendations yet
+                </h3>
+
+                <p>
+                    Upload your resume to see recommended jobs.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         IMPROVEMENTS
+    ===================================================== -->
+
+    <section id="improvements"
+             class="improvements-section">
+
+        <div class="section-heading">
+
+            <span>RESUME OPTIMIZATION</span>
+
+            <h2>
+                Resume Improvements
+            </h2>
+
+            <p>
+                Identify areas where your resume can be improved.
+            </p>
+
+        </div>
+
+        <div id="improvementsContainer"
+             class="improvements-container">
+
+            <div class="empty-state">
+
+                <h3>
+                    No improvement suggestions yet
+                </h3>
+
+                <p>
+                    Upload your resume to receive
+                    personalized improvement suggestions.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- =====================================================
+         RESUME HISTORY
+    ===================================================== -->
+
+    <section id="resumeHistorySection"
+             class="resume-history-section">
+
+        <div class="section-heading">
+
+            <span>RESUME MANAGEMENT</span>
+
+            <h2>
+                My Resume History
+            </h2>
+
+            <p>
+                View and manage your previously uploaded resumes.
+            </p>
+
+        </div>
+
+        <div id="resumeHistoryContainer"
+             class="resume-history-grid">
+
+            <div class="empty-state">
+
+                <h3>
+                    No resume history yet
+                </h3>
+
+                <p>
+                    Upload a resume to see it here.
+                </p>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+
+<!-- =========================================================
+     PROFESSIONAL RESUME ANALYSIS MODAL
+========================================================= -->
+
+<div id="analysisModal"
+     class="analysis-modal">
+
+    <div class="analysis-modal-content">
+
+        <div class="analysis-modal-header">
+
+            <div>
+
+                <span class="modal-label">
+                    AI RESUME ANALYSIS
+                </span>
+
+                <h2>
+                    Resume Performance Report
+                </h2>
+
+                <p id="analysisResumeName">
+                    Resume Analysis
+                </p>
+
+            </div>
+
+            <button type="button"
+                    class="modal-close-button"
+                    onclick="closeAnalysisModal()"
+                    aria-label="Close analysis">
+
+                &times;
+
+            </button>
+
+        </div>
+
+        <div class="analysis-score-section">
+
+            <div class="analysis-score-circle">
+
+                <div id="analysisOverallScore">
+                    0
+                </div>
+
+                <span>
+                    / 100
+                </span>
+
+            </div>
+
+            <h3 id="analysisScoreLabel">
+                Resume Score
+            </h3>
+
+            <p id="analysisSummary">
+                Loading analysis...
+            </p>
+
+        </div>
+
+        <div class="analysis-score-grid">
+
+            <div class="analysis-score-card">
+
+                <span>
+                    Skills
+                </span>
+
+                <strong id="analysisSkillsScore">
+                    0/100
+                </strong>
+
+                <div class="analysis-progress">
+                    <div id="analysisSkillsProgress"></div>
+                </div>
+
+            </div>
+
+            <div class="analysis-score-card">
+
+                <span>
+                    Experience
+                </span>
+
+                <strong id="analysisExperienceScore">
+                    0/100
+                </strong>
+
+                <div class="analysis-progress">
+                    <div id="analysisExperienceProgress"></div>
+                </div>
+
+            </div>
+
+            <div class="analysis-score-card">
+
+                <span>
+                    Education
+                </span>
+
+                <strong id="analysisEducationScore">
+                    0/100
+                </strong>
+
+                <div class="analysis-progress">
+                    <div id="analysisEducationProgress"></div>
+                </div>
+
+            </div>
+
+            <div class="analysis-score-card">
+
+                <span>
+                    Format
+                </span>
+
+                <strong id="analysisFormatScore">
+                    0/100
+                </strong>
+
+                <div class="analysis-progress">
+                    <div id="analysisFormatProgress"></div>
+                </div>
+
+            </div>
+
+            <div class="analysis-score-card">
+
+                <span>
+                    Keywords
+                </span>
+
+                <strong id="analysisKeywordScore">
+                    0/100
+                </strong>
+
+                <div class="analysis-progress">
+                    <div id="analysisKeywordProgress"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="analysis-result-section strengths-section">
+
+            <h3>
+                <span>✓</span>
+                Strengths
+            </h3>
+
+            <div id="analysisStrengths">
+                Loading strengths...
+            </div>
+
+        </div>
+
+        <div class="analysis-result-section weaknesses-section">
+
+            <h3>
+                <span>!</span>
+                Areas to Improve
+            </h3>
+
+            <div id="analysisWeaknesses">
+                Loading weaknesses...
+            </div>
+
+        </div>
+
+        <div class="analysis-result-section recommendations-section">
+
+            <h3>
+                <span>💡</span>
+                Recommendations
+            </h3>
+
+            <div id="analysisRecommendations">
+                Loading recommendations...
+            </div>
+
+        </div>
+
+        <div class="ai-insights-section">
+
+            <div class="ai-insights-heading">
+
+                <span class="ai-robot-icon">
+                    🤖
+                </span>
+
+                <div>
+
+                    <h3>
+                        AI-Powered Resume Insights
+                    </h3>
+
+                    <p>
+                        Personalized recommendations generated by your local Llama 3.2 AI model.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div class="ai-insights-content">
+
+                <div class="ai-insight-card">
+                    <h4>📄 Resume Summary</h4>
+                    <div id="aiResumeSummary">
+                        AI summary will appear here.
+                    </div>
+                </div>
+
+                <div class="ai-insight-card">
+                    <h4>💪 AI Strengths</h4>
+                    <div id="aiResumeStrengths">
+                        AI strengths will appear here.
+                    </div>
+                </div>
+
+                <div class="ai-insight-card">
+                    <h4>⚠️ AI Weaknesses</h4>
+                    <div id="aiResumeWeaknesses">
+                        AI weaknesses will appear here.
+                    </div>
+                </div>
+
+                <div class="ai-insight-card">
+                    <h4>🛠️ Missing Skills</h4>
+                    <div id="aiMissingSkills">
+                        Missing skills will appear here.
+                    </div>
+                </div>
+
+                <div class="ai-insight-card">
+                    <h4>📈 Personalized Improvements</h4>
+                    <div id="aiResumeImprovements">
+                        AI improvement suggestions will appear here.
+                    </div>
+                </div>
+
+                <div class="ai-insight-card">
+                    <h4>🎯 Suitable Job Roles</h4>
+                    <div id="aiJobRoles">
+                        Suitable job roles will appear here.
+                    </div>
+                </div>
+
+                <div class="ai-insight-card">
+                    <h4>🎤 Interview Preparation</h4>
+                    <div id="aiInterviewTips">
+                        Interview preparation tips will appear here.
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="analysis-modal-footer">
+
+            <button type="button"
+                    class="modal-secondary-button"
+                    onclick="downloadAnalysisReport()">
+
+                📄 Download Analysis Report
+
+            </button>
+
+            <button type="button"
+                    class="modal-secondary-button"
+                    onclick="closeAnalysisModal(); return false;">
+                Close
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================================================
+     RESUME DETAILS MODAL
+========================================================= -->
+
+<div id="resumeModal"
+     class="resume-modal">
+
+    <div class="resume-modal-content">
+
+        <div class="resume-modal-header">
+
+            <div>
+
+                <span class="modal-label">
+                    RESUME DETAILS
+                </span>
+
+                <h2 id="modalResumeFileName">
+                    Resume Details
+                </h2>
+
+            </div>
+
+            <button type="button"
+                    class="modal-close-button"
+                    onclick="closeResumeModal()"
+                    aria-label="Close resume details">
+
+                &times;
+
+            </button>
+
+        </div>
+
+        <div class="resume-modal-info">
+
+            <div class="modal-info-card">
+
+                <span>
+                    File Name
+                </span>
+
+                <strong id="modalFileName">
+                    -
+                </strong>
+
+            </div>
+
+            <div class="modal-info-card">
+
+                <span>
+                    Uploaded Date
+                </span>
+
+                <strong id="modalUploadedDate">
+                    -
+                </strong>
+
+            </div>
+
+        </div>
+
+        <div class="resume-text-section">
+
+            <h3>
+                Extracted Resume Text
+            </h3>
+
+            <div id="modalResumeText"
+                 class="resume-text-content">
+
+                Loading resume text...
+
+            </div>
+
+        </div>
+
+        <div class="resume-modal-footer">
+
+            <button type="button"
+                    class="modal-secondary-button"
+                    onclick="closeResumeModal()">
+
+                Close
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+
+<footer class="footer">
+
+    <p>
+        Resume Analyzer &copy; 2026
+    </p>
+
+</footer>
+
+<!-- =========================================================
+     AI ANALYSIS MODAL
+========================================================= -->
+
+<div id="aiAnalysisModal"
+     class="ai-analysis-modal hidden"
+     hidden
+     aria-hidden="true">
+
+    <div class="ai-analysis-modal-content">
+
+        <div class="ai-analysis-modal-header">
+
+            <div>
+
+                <span class="ai-analysis-label">
+                    AI RESUME ANALYSIS
+                </span>
+
+                <h2>
+                    AI-Powered Resume Insights
+                </h2>
+
+                <p id="aiAnalysisResumeName">
+                    Resume Analysis
+                </p>
+
+            </div>
+
+            <button type="button"
+                    class="ai-analysis-close-button"
+                    onclick="closeAIAnalysisModal(); return false;">
+                &times;
+            </button>
+
+        </div>
+
+        <div class="ai-analysis-body">
+
+            <div class="ai-analysis-introduction">
+
+                <h3>
+                    🤖  AI-Powered Resume Insights
+                </h3>
+
+                <p>
+                    Personalized recommendations generated by your local Llama 3.2 AI model.
+                </p>
+
+            </div>
+
+            <div class="ai-analysis-report"
+                 id="aiAnalysisText">
+
+            </div>
+
+            <div class="ai-analysis-actions">
+
+                <button type="button"
+                        class="ai-analysis-action-button ai-analysis-print-button"
+                        onclick="printAIAnalysis()">
+
+                    🖨️ Print Report
+
+                </button>
+
+                <button type="button"
+                        class="ai-analysis-action-button ai-analysis-download-button"
+                        onclick="downloadAIAnalysis()">
+
+                    📥 Download Report
+
+                </button>
+
+                <button type="button"
+                        class="ai-analysis-action-button ai-analysis-secondary-button"
+                        onclick="closeAIAnalysisModal()">
+
+                    Close
+
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="ai-analysis-modal-footer">
+
+            <button type="button"
+                    class="modal-secondary-button"
+                    onclick="closeAIAnalysisModal()">
+
+                Close Report
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- SCRIPT MUST BE LAST -->
+
+<script src="/script.js"></script>
+
+</body>
+
+</html>

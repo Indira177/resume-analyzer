@@ -1,0 +1,6 @@
+###
+
+POST http://localhost:8080/api/resumes/upload
+Content-Type: multipart/form-data
+
+file=@C:/Users/Siva Lakshmi/Desktop/Indira Resume.pdf
