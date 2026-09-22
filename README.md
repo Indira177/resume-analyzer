@@ -86,13 +86,28 @@ Create the MySQL database:
 CREATE DATABASE resume_analyzer;
 ```
 
-Configure the MySQL username, password, and connection settings in:
+The sellable package does **not** include a real `application.properties` file containing database credentials.
 
-```text
-src/main/resources/application.properties
-```
+### Buyer Configuration
 
-Do not publish production passwords inside the project package.
+After extracting the project:
+
+1. Open:
+   `src/main/resources/`
+
+2. Copy:
+   `application.properties.example`
+
+3. Rename the copied file to:
+   `application.properties`
+
+4. Open `application.properties` and enter the customer's own MySQL username and password.
+
+5. Make sure MySQL is running and the database `resume_analyzer` exists.
+
+6. Keep the customer's `application.properties` local. Do not commit or share it when publishing the project.
+
+The example configuration file is provided as a safe template for installation.
 
 ## Application Configuration
 
@@ -206,6 +221,25 @@ resume-analyzer/
 ├── mvnw
 └── mvnw.cmd
 ```
+
+## Customer Installation Summary
+
+For a new installation, the customer needs:
+
+- Java 17
+- MySQL 8
+- Ollama
+- Llama 3.2 model (`llama3.2:latest`)
+
+Installation flow:
+
+1. Extract the project ZIP.
+2. Create the `resume_analyzer` MySQL database.
+3. Copy `src/main/resources/application.properties.example` to `application.properties`.
+4. Enter the customer's own MySQL credentials.
+5. Start Ollama and make sure `llama3.2:latest` is available.
+6. Start Spring Boot using `mvnw.cmd spring-boot:run`.
+7. Open `http://localhost:8080`.
 
 ## Production / Delivery Notes
 
