@@ -10,7 +10,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/analysis")
-@CrossOrigin(origins = "http://localhost:5500")
+@CrossOrigin
 public class AnalysisController {
 
     private final ResumeAnalysisService resumeAnalysisService;
@@ -21,6 +21,7 @@ public class AnalysisController {
         this.resumeAnalysisService = resumeAnalysisService;
     }
 
+    // Create / calculate resume analysis
     @PostMapping("/{resumeId}")
     public ResponseEntity<?> analyzeResume(
             @PathVariable Long resumeId) {
@@ -43,13 +44,44 @@ public class AnalysisController {
 
         } catch (Exception e) {
 
-            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                            "success", false,
+                            "message", "Failed to analyze resume"
+                    ));
+        }
+    }
+
+    // Get previously saved resume analysis
+    @GetMapping("/{resumeId}")
+    public ResponseEntity<?> getAnalysis(
+            @PathVariable Long resumeId) {
+
+        try {
+
+            AnalysisResult result =
+                    resumeAnalysisService
+                            .getAnalysisByResumeId(resumeId);
+
+            return ResponseEntity.ok(result);
+
+        } catch (IllegalArgumentException e) {
+
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "success", false,
+                            "message", e.getMessage()
+                    ));
+
+        } catch (Exception e) {
 
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "success", false,
-                            "message", "Unable to analyze resume"
+                            "message", "Failed to get resume analysis"
                     ));
         }
     }

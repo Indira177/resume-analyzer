@@ -9,9 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-
 import org.springframework.security.config.http.SessionCreationPolicy;
-
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -113,24 +111,31 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Authentication APIs
+                        // =================================================
+                        // PUBLIC AUTHENTICATION APIs
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/auth/login",
-                                "/api/auth/register",
-                                "/api/auth/me",
-                                "/api/auth/logout"
+                                "/api/auth/register"
                         )
                         .permitAll()
 
 
-                        // Health
+                        // =================================================
+                        // HEALTH
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/health"
                         )
                         .permitAll()
 
 
-                        // Frontend
+                        // =================================================
+                        // FRONTEND
+                        // =================================================
+
                         .requestMatchers(
                                 "/",
                                 "/index.html",
@@ -143,37 +148,73 @@ public class SecurityConfig {
                         .permitAll()
 
 
-                        // Resume APIs
+                        // =================================================
+                        // PROTECTED AUTH APIs
+                        // =================================================
+
+                        .requestMatchers(
+                                "/api/auth/me",
+                                "/api/auth/logout"
+                        )
+                        .authenticated()
+
+
+                        // =================================================
+                        // PROTECTED RESUME APIs
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/resumes/**"
                         )
-                        .permitAll()
+                        .authenticated()
 
 
-                        // Job matching
+                        // =================================================
+                        // PROTECTED JOB MATCHING APIs
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/job-match/**"
                         )
-                        .permitAll()
+                        .authenticated()
 
 
-                        // Analysis
+                        // =================================================
+                        // PROTECTED ATS ANALYSIS APIs
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/analysis/**"
                         )
-                        .permitAll()
+                        .authenticated()
 
 
-                        // Job descriptions
+                        // =================================================
+                        // PROTECTED AI ANALYSIS APIs
+                        // =================================================
+
+                        .requestMatchers(
+                                "/api/ai/**"
+                        )
+                        .authenticated()
+
+
+                        // =================================================
+                        // PROTECTED JOB DESCRIPTION APIs
+                        // =================================================
+
                         .requestMatchers(
                                 "/api/job-descriptions/**"
                         )
-                        .permitAll()
+                        .authenticated()
 
 
-                        // Other requests
+                        // =================================================
+                        // EVERYTHING ELSE
+                        // =================================================
+
                         .anyRequest()
-                        .permitAll()
+                        .authenticated()
                 );
 
 

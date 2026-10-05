@@ -710,6 +710,41 @@ async function uploadResume() {
             );
         }
 
+        // Create ATS analysis automatically
+        if (currentResumeId) {
+
+            const analysisResponse =
+                await fetch(
+                    API_BASE_URL +
+                    "/api/analysis/" +
+                    currentResumeId,
+                    {
+                        method: "POST",
+                        credentials: "include"
+                    }
+                );
+
+            const analysisData =
+                await readResponse(
+                    analysisResponse
+                );
+
+            if (!analysisResponse.ok) {
+
+                console.warn(
+                    "ATS analysis could not be created:",
+                    analysisData.message ||
+                    analysisData.error
+                );
+            } else {
+
+                console.log(
+                    "ATS analysis created successfully:",
+                    analysisData
+                );
+            }
+        }
+
         showMessage(
             "uploadMessage",
             "Resume uploaded successfully.",
@@ -879,10 +914,17 @@ async function loadResumeHistory() {
                                 </button>
 
                                 <button
-                                    type="button"
-                                    class="history-button view-button"
-                                    onclick="viewResume(${resume.id})">
-                                    View
+                                   type="button"
+                                   class="history-button view-button"
+                                   onclick="viewResume(${resume.id})">
+                                   View
+                                </button>
+
+                                <button
+                                   type="button"
+                                   class="history-button download-button"
+                                   onclick="downloadResume(${resume.id})">
+                                   ⬇️ Download
                                 </button>
 
                                 <button
@@ -919,6 +961,107 @@ async function loadResumeHistory() {
                 </p>
             </div>
         `;
+    }
+}
+
+/* =========================================================
+   DOWNLOAD RESUME
+========================================================= */
+
+async function downloadResume(resumeId) {
+
+    if (!resumeId) {
+
+        alert("Invalid resume ID.");
+
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL +
+                "/api/resumes/" +
+                resumeId +
+                "/download",
+                {
+                    method: "GET",
+                    credentials: "include"
+                }
+            );
+
+        if (!response.ok) {
+
+            const data =
+                await readResponse(response);
+
+            throw new Error(
+                data.message ||
+                data.error ||
+                "Unable to download resume."
+            );
+        }
+
+        const blob =
+            await response.blob();
+
+        const contentDisposition =
+            response.headers.get(
+                "Content-Disposition"
+            );
+
+        let filename =
+            "Resume.pdf";
+
+        if (contentDisposition) {
+
+            const match =
+                contentDisposition.match(
+                    /filename="?([^"]+)"?/i
+                );
+
+            if (match && match[1]) {
+
+                filename =
+                    match[1];
+            }
+        }
+
+        const url =
+            URL.createObjectURL(blob);
+
+        const link =
+            document.createElement("a");
+
+        link.href = url;
+
+        link.download = filename;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        link.remove();
+
+        setTimeout(
+            () => {
+                URL.revokeObjectURL(url);
+            },
+            1000
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Download resume error:",
+            error
+        );
+
+        alert(
+            error.message ||
+            "Unable to download resume."
+        );
     }
 }
 
@@ -962,27 +1105,82 @@ async function analyzeSelectedResume(
 
     try {
 
-        currentMatches =
-            await loadJobRanking(
-                currentResumeId
+        // Get the real ATS analysis
+        let response =
+            await fetch(
+                API_BASE_URL +
+                "/api/analysis/" +
+                currentResumeId,
+                {
+                    method: "GET",
+                    credentials: "include"
+                }
             );
 
-        currentMatches =
-            await addJobTitles(
+        let analysis =
+            await readResponse(response);
+
+        // If analysis doesn't exist, create it
+        if (response.status === 404) {
+
+            response =
+                await fetch(
+                    API_BASE_URL +
+                    "/api/analysis/" +
+                    currentResumeId,
+                    {
+                        method: "POST",
+                        credentials: "include"
+                    }
+                );
+
+            analysis =
+                await readResponse(response);
+        }
+
+        if (!response.ok) {
+
+            throw new Error(
+                analysis.message ||
+                analysis.error ||
+                "Unable to analyze resume."
+            );
+        }
+
+        // Keep job matching working
+        try {
+
+            currentMatches =
+                await loadJobRanking(
+                    currentResumeId
+                );
+
+            currentMatches =
+                await addJobTitles(
+                    currentMatches
+                );
+
+            updateDashboard(
                 currentMatches
             );
 
-        updateDashboard(
-            currentMatches
-        );
+            displayRecommendedJobs(
+                currentMatches
+            );
 
-        displayRecommendedJobs(
-            currentMatches
-        );
+            displayImprovements(
+                currentMatches
+            );
 
-        displayImprovements(
-            currentMatches
-        );
+        } catch (jobError) {
+
+            console.warn(
+                "Job matching data could not be loaded:",
+                jobError
+            );
+
+            currentMatches = [];
+        }
 
         const modal =
             getElement(
@@ -996,94 +1194,112 @@ async function analyzeSelectedResume(
             );
         }
 
-        const historyCard =
-            document.querySelector(
-                `.analyze-button[onclick*="(${currentResumeId})"]`
-            )?.closest(
-                ".resume-history-card"
-            );
-
-        const resumeName =
-            currentResume?.fileName ||
-            historyCard
-                ?.querySelector("h3")
-                ?.textContent ||
-            "Resume Analysis";
-
         setText(
             "analysisResumeName",
-            resumeName.trim()
+            currentResume?.fileName ||
+            "Resume Analysis"
         );
 
-        const scores =
-            currentMatches.map(
-                match =>
-                    Number(
-                        match.matchScore ||
-                        match.score ||
-                        0
-                    )
+        // Real ATS scores
+        const overallScore =
+            Number(
+                analysis.overallScore || 0
             );
 
-        const bestScore =
-            scores.length
-                ? Math.max(...scores)
-                : 0;
+        const skillsScore =
+            Number(
+                analysis.skillsScore || 0
+            );
 
+        const experienceScore =
+            Number(
+                analysis.experienceScore || 0
+            );
+
+        const educationScore =
+            Number(
+                analysis.educationScore || 0
+            );
+
+        const formatScore =
+            Number(
+                analysis.formatScore || 0
+            );
+
+        const keywordScore =
+            Number(
+                analysis.keywordScore || 0
+            );
+
+        // Overall score
         setText(
             "analysisOverallScore",
-            bestScore
+            overallScore
         );
 
         setText(
             "analysisScoreLabel",
-            bestScore >= 80
-                ? "Excellent Resume Match"
-                : bestScore >= 60
-                    ? "Good Resume Match"
+            overallScore >= 80
+                ? "Excellent ATS Score"
+                : overallScore >= 60
+                    ? "Good ATS Score"
                     : "Resume Needs Improvement"
         );
 
         setText(
             "analysisSummary",
-            currentMatches.length
-                ? "Your resume has been analyzed against the available job descriptions."
-                : "No job matches are available for this resume yet."
+            "Your resume has been analyzed using the ATS resume analysis."
         );
 
+        // Category scores
         setText(
             "analysisSkillsScore",
-            bestScore + "/100"
+            skillsScore + "/100"
         );
 
         setText(
             "analysisExperienceScore",
-            bestScore + "/100"
+            experienceScore + "/100"
         );
 
         setText(
             "analysisEducationScore",
-            bestScore + "/100"
+            educationScore + "/100"
         );
 
         setText(
             "analysisFormatScore",
-            bestScore + "/100"
+            formatScore + "/100"
         );
 
         setText(
             "analysisKeywordScore",
-            bestScore + "/100"
+            keywordScore + "/100"
         );
 
-        [
-            "analysisSkillsProgress",
-            "analysisExperienceProgress",
-            "analysisEducationProgress",
-            "analysisFormatProgress",
-            "analysisKeywordProgress"
-        ].forEach(
-            id => {
+        // Progress bars
+        const progressValues = {
+
+            analysisSkillsProgress:
+            skillsScore,
+
+            analysisExperienceProgress:
+            experienceScore,
+
+            analysisEducationProgress:
+            educationScore,
+
+            analysisFormatProgress:
+            formatScore,
+
+            analysisKeywordProgress:
+            keywordScore
+        };
+
+        Object.entries(
+            progressValues
+        ).forEach(
+            ([id, score]) => {
 
                 const element =
                     getElement(id);
@@ -1091,81 +1307,39 @@ async function analyzeSelectedResume(
                 if (element) {
 
                     element.style.width =
-                        bestScore + "%";
+                        Math.max(
+                            0,
+                            Math.min(
+                                100,
+                                score
+                            )
+                        ) + "%";
                 }
             }
         );
 
+        // Real strengths
         setText(
             "analysisStrengths",
-            currentMatches.length
-                ? "Your resume matches skills required by the available job descriptions."
-                : "No matching job data available."
+            analysis.strengths ||
+            "No specific strengths were identified."
         );
 
-        const missingSkills = [];
-
-        currentMatches.forEach(
-            match => {
-
-                if (!match.missingSkills) {
-                    return;
-                }
-
-                if (
-                    Array.isArray(
-                        match.missingSkills
-                    )
-                ) {
-
-                    missingSkills.push(
-                        ...match.missingSkills
-                    );
-
-                } else {
-
-                    missingSkills.push(
-                        ...String(
-                            match.missingSkills
-                        )
-                            .split(",")
-                            .map(
-                                skill =>
-                                    skill.trim()
-                            )
-                            .filter(Boolean)
-                    );
-                }
-            }
-        );
-
-        const uniqueMissingSkills =
-            [
-                ...new Set(
-                    missingSkills
-                )
-            ];
-
+        // Real weaknesses
         setText(
             "analysisWeaknesses",
-            uniqueMissingSkills.length
-                ? "Missing skills: " +
-                uniqueMissingSkills.join(
-                    ", "
-                )
-                : "No major missing skills were found."
+            analysis.weaknesses ||
+            "No specific weaknesses were identified."
         );
 
+        // Real recommendations
         setText(
             "analysisRecommendations",
-            uniqueMissingSkills.length
-                ? "Consider adding these skills to your resume if you have relevant experience: " +
-                uniqueMissingSkills.join(
-                    ", "
-                )
-                : "Continue improving your resume with measurable achievements and relevant keywords."
+            analysis.recommendations ||
+            "No recommendations are available."
         );
 
+        // Open modal
         modal.classList.add(
             "is-open"
         );
@@ -2886,9 +3060,21 @@ document.addEventListener(
 
         setupFileSelection();
 
-        // Always show Login page after browser refresh
-        localStorage.removeItem("currentUser");
+        // Clear frontend login when browser is refreshed
+        localStorage.removeItem(
+            "resumeAnalyzerUser"
+        );
 
+        localStorage.removeItem(
+            "currentResumeId"
+        );
+
+        currentUser = null;
+        currentResumeId = null;
+        currentResume = null;
+        currentMatches = [];
+
+        // Always show Login page after refresh
         showLoggedOutPage();
     }
 );

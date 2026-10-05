@@ -25,7 +25,8 @@ public class ResumeAnalysisService {
         // Find resume
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("Resume not found with id: " + resumeId));
+                        new IllegalArgumentException(
+                                "Resume not found with id: " + resumeId));
 
         String text = resume.getResumeText();
 
@@ -76,7 +77,8 @@ public class ResumeAnalysisService {
 
         result.setWeaknesses(generateWeaknesses(lowerText));
 
-        result.setRecommendations(generateRecommendations(lowerText));
+        result.setRecommendations(
+                generateRecommendations(lowerText));
 
         return analysisResultRepository.save(result);
     }
@@ -250,7 +252,8 @@ public class ResumeAnalysisService {
         }
 
         if (strengths.length() == 0) {
-            strengths.append("Resume contains professional information.");
+            strengths.append(
+                    "Resume contains professional information.");
         }
 
         return strengths.toString();
@@ -261,23 +264,28 @@ public class ResumeAnalysisService {
         StringBuilder weaknesses = new StringBuilder();
 
         if (!text.contains("docker")) {
-            weaknesses.append("Docker experience not mentioned; ");
+            weaknesses.append(
+                    "Docker experience not mentioned; ");
         }
 
         if (!text.contains("kubernetes")) {
-            weaknesses.append("Kubernetes experience not mentioned; ");
+            weaknesses.append(
+                    "Kubernetes experience not mentioned; ");
         }
 
         if (!text.contains("aws")) {
-            weaknesses.append("AWS/cloud experience not mentioned; ");
+            weaknesses.append(
+                    "AWS/cloud experience not mentioned; ");
         }
 
         if (!text.contains("azure")) {
-            weaknesses.append("Azure experience not mentioned; ");
+            weaknesses.append(
+                    "Azure experience not mentioned; ");
         }
 
         if (!text.contains("achievements")) {
-            weaknesses.append("Quantifiable achievements are not clearly mentioned; ");
+            weaknesses.append(
+                    "Quantifiable achievements are not clearly mentioned; ");
         }
 
         return weaknesses.toString();
@@ -312,5 +320,16 @@ public class ResumeAnalysisService {
                 "Keep the resume concise and use clear achievement-oriented bullet points.");
 
         return recommendations.toString();
+    }
+
+    // Get saved analysis for a resume
+    public AnalysisResult getAnalysisByResumeId(Long resumeId) {
+
+        return analysisResultRepository
+                .findByResumeId(resumeId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Analysis not found for resume id: "
+                                        + resumeId));
     }
 }
