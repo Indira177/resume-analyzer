@@ -9,7 +9,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = "http://localhost:5500")
+@CrossOrigin(origins = {
+        "http://localhost:5500",
+        "https://resume-analyzer-production-070d.up.railway.app"
+})
 public class AiResumeController {
 
     private final AiResumeService aiResumeService;
